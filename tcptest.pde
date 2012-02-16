@@ -21,7 +21,7 @@ by David A. Mellis
 // The IP address will be dependent on your local network:
 byte mac[] = {  0xDE, 0xAD, 0xBA, 0xEF, 0xFE, 0xED };
 byte ip[] = { 10,250,1,199 };
-byte server[] = { 10,42,43,51 }; // Google
+byte server[] = { 10,250,43,51 }; // Google
 int port = 8080;
 
 
@@ -78,7 +78,6 @@ void loop()
 		// if the server's disconnected, stop the client:
 		 if (!client.connected()) {
 			Serial.println("Server Disconnected.");
-			Serial.println();
 			client.stop();
 			connection_alive = false;
 		}
@@ -102,6 +101,7 @@ boolean connect_to_client () {
 	// if you get a connection, report back via serial:
 	if (client.connect(server, port)) {
 		Serial.println("connected!");
+		print_to_server ("Hello Server/nThis is an example of command/nC1");
 		return true;
 	} else {
 		// kf you didn't get a connection to the server:
@@ -111,9 +111,10 @@ boolean connect_to_client () {
 
 }
 
-
- 
- 
+print_to_server (char text) {
+	client.println(text); 
+	Serial.println(text);
+}
  
  // Just a utility function to nicely format an IP address.
 const char* ip_to_str(const uint8_t* ipAddr)
