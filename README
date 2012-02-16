@@ -1,0 +1,9 @@
+/********************************************
+**  Name: tcptest
+**  Created: 02/16/2012
+*********************************************
+**  REVISIONS from:
+**
+**  V0.1 - 02/16/2012
+**  * Created simple client
+**  * Reads and writes to a server chosen at the begining of the sketch
