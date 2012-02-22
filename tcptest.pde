@@ -1,14 +1,5 @@
 /*
-Web client
-
-This sketch connects to a website (http://www.google.com)
-using an Arduino Wiznet Ethernet shield. 
-
-Circuit:
-* Ethernet shield attached to pins 10, 11, 12, 13
-
-created 18 Dec 2009
-by David A. Mellis
+Seed conter tests
 
 */
 
@@ -47,8 +38,10 @@ void setup() {
 	Serial.println("");
 
 	Serial.print ("Type server ip: ");
-
 	receive_printer_IP ();
+	
+	Serial.print ("Type server port: ");
+	receive_printer_PORT ();
 
 	connection_alive = connect_to_client ();
   
@@ -101,7 +94,7 @@ boolean connect_to_client () {
 	// if you get a connection, report back via serial:
 	if (client.connect(server, port)) {
 		Serial.println("connected!");
-		print_to_server ("Hello Server/nThis is an example of command/nC1");
+		print_to_server ("Hello Server\nThis is an example of command:\nC1");
 		return true;
 	} else {
 		// kf you didn't get a connection to the server:
@@ -111,7 +104,7 @@ boolean connect_to_client () {
 
 }
 
-print_to_server (char text) {
+void print_to_server (char* text) {
 	client.println(text); 
 	Serial.println(text);
 }
@@ -190,8 +183,15 @@ void receive_printer_IP () {
 
 
 	Serial.println (ip_to_str(server));
+}
 
-
+void receive_printer_PORT () {
+	const int buf_port = 6;
+	char printerPort[buf_port];
+	recevie_data (printerPort,buf_port);
+	char * thisChar = printerPort;
+	port = atoi(thisChar);
+	Serial.println (port);
 }
 
 

@@ -4,6 +4,10 @@
 *********************************************
 **  REVISIONS from:
 **
-**  V0.1 - 02/16/2012
+**  V0.2 - 22/02/2012
+**  * Fixed example command as welcome message
+**  * Port input inplemented
+**
+**  V0.1 - 16/02/2012
 **  * Created simple client
 **  * Reads and writes to a server chosen at the begining of the sketch
