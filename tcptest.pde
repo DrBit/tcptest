@@ -61,10 +61,11 @@ void loop()
 		// as long as there are bytes in the serial queue,
 		// read them and send them out the socket if it's open:
 		while (Serial.available() > 0) {
-			char inChar = Serial.read();
+			char inChar[2];
+			inChar [0]= Serial.read();
+			inChar [1]= 0;
 			if (client.connected()) {
-				client.print(inChar); 
-				Serial.print(inChar);
+				print_to_server(inChar);
 			}
 		}
 	 
@@ -94,7 +95,7 @@ boolean connect_to_client () {
 	// if you get a connection, report back via serial:
 	if (client.connect(server, port)) {
 		Serial.println("connected!");
-		print_to_server ("Hello Server\nThis is an example of command:\nC1");
+		print_to_server ("Hello Server\r\nThis is an example of command:\r\nC1\r\n");
 		return true;
 	} else {
 		// kf you didn't get a connection to the server:
@@ -105,8 +106,14 @@ boolean connect_to_client () {
 }
 
 void print_to_server (char* text) {
-	client.println(text); 
-	Serial.println(text);
+	
+	if ((text[0] == 13) || (text[0] == 10)) {
+		client.print("\r\n");
+		Serial.print("\r\n");
+	}else{
+		client.print(text); 
+		Serial.print(text);
+	}
 }
  
  // Just a utility function to nicely format an IP address.

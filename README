@@ -7,6 +7,7 @@
 **  V0.2 - 22/02/2012
 **  * Fixed example command as welcome message
 **  * Port input inplemented
+**  * fixed bug carriage return + line feed
 **
 **  V0.1 - 16/02/2012
 **  * Created simple client
