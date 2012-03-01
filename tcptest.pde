@@ -1,5 +1,5 @@
 /*
-Seed conter tests
+Seed counter tests
 
 */
 
@@ -12,12 +12,12 @@ Seed conter tests
 // The IP address will be dependent on your local network:
 byte mac[] = {  0xDE, 0xAD, 0xBA, 0xEF, 0xFE, 0xED };
 byte ip[] = { 10,250,1,199 };
-byte server[] = { 10,250,43,51 }; // Google
-int port = 8080;
-
-
+byte server[] = { 10,250,1,3 }; // Google
+int port = 8888;
 boolean connection_alive = false;
 
+#define bufferSize 21
+char commandBuffer[bufferSize];
 
 // Initialize the Ethernet client library
 // with the IP address and port of the server 
@@ -34,17 +34,23 @@ void setup() {
 	delay(1000);
 
 	Serial.print("Starting on IP: ");
-	Serial.print(ip_to_str(ip));
-	Serial.println("");
-
-	Serial.print ("Type server ip: ");
-	receive_printer_IP ();
+	Serial.println(ip_to_str(ip));
 	
-	Serial.print ("Type server port: ");
-	receive_printer_PORT ();
+	Serial.print ("Default server ip: ");
+	Serial.println(ip_to_str(server));
+	
+	Serial.print ("Default server port: ");
+	Serial.println(port);
+	
+	Serial.print("\r\nChange server and port? [y/n]\r\n");
+	
+	if (YN_question ()) {
+		receive_printer_IP ();
+		receive_printer_PORT ();
+	}
+	
 
 	connection_alive = connect_to_client ();
-  
 }
 
 
@@ -59,14 +65,20 @@ void loop()
 		}
 	 
 		// as long as there are bytes in the serial queue,
-		// read them and send them out the socket if it's open:
+		// read them and buffer them, when return is pressed send them out the socket if it's open:
 		while (Serial.available() > 0) {
-			char inChar[2];
-			inChar [0]= Serial.read();
-			inChar [1]= 0;
-			if (client.connected()) {
-				print_to_server(inChar);
-			}
+		
+			char inChar = Serial.read();
+			if ((inChar == 13) || (inChar == 10)) {
+				if (client.connected()) {
+					print_to_server(commandBuffer);
+					clean_buffer (commandBuffer,bufferSize);
+				}else{
+					Serial.println("Failed to send command, client not available.");
+				}
+			}else{
+				buffer_char (inChar,commandBuffer,bufferSize);	
+			}		
 		}
 	 
 		// if the server's disconnected, stop the client:
@@ -81,7 +93,6 @@ void loop()
 		// wait 20 seconds before connecting again.
 		delay (5000);   //5 seconds for testing
 	}
-  
 }
 
 
@@ -95,7 +106,12 @@ boolean connect_to_client () {
 	// if you get a connection, report back via serial:
 	if (client.connect(server, port)) {
 		Serial.println("connected!");
-		print_to_server ("Hello Server\r\nThis is an example of command:\r\nC1\r\n");
+		print_to_server ("Hello Server\r\nThis is an example of command:\r\nP*");
+		// testing generated commands
+		client.print("1P");
+		client.print(1);
+		client.print("\r\n");
+		delay (300);
 		return true;
 	} else {
 		// kf you didn't get a connection to the server:
@@ -106,13 +122,33 @@ boolean connect_to_client () {
 }
 
 void print_to_server (char* text) {
-	
-	if ((text[0] == 13) || (text[0] == 10)) {
+
+	if (strlen(text) > 0) {		// If text empty wont print anything
+		client.print(text);
 		client.print("\r\n");
-		Serial.print("\r\n");
-	}else{
-		client.print(text); 
 		Serial.print(text);
+		Serial.print("\r\n");
+	}
+}
+
+void buffer_char (char character, char* bufferContainer, int max_size) {
+	int len = max_size;
+	int actualLen = strlen(bufferContainer);
+	char temp_char = character;
+	
+	if (actualLen < len-1) {
+		bufferContainer[actualLen] = temp_char;
+	}else{
+		Serial.print("buffer full, max ");
+		Serial.print(len-1,DEC);
+		Serial.println(" characters per command.");
+	}
+}
+
+void clean_buffer (char* bufferContainer, int max_size) {
+	int len = max_size;
+	for (int c = 0; c < len; c++) {
+		bufferContainer[c] = 0;
 	}
 }
  
@@ -145,6 +181,7 @@ int freeRam () {
 
 
 void receive_printer_IP () {
+	Serial.print ("Type server ip: ");
 	Serial.flush ();
 	int buf_ip =17; // 17 is the maximum numbers an IP can contain (including dots) 
 	char printerIP[buf_ip]; 
@@ -193,6 +230,8 @@ void receive_printer_IP () {
 }
 
 void receive_printer_PORT () {
+	Serial.print ("Type server port: ");
+	Serial.flush ();
 	const int buf_port = 6;
 	char printerPort[buf_port];
 	recevie_data (printerPort,buf_port);
@@ -214,10 +253,12 @@ boolean recevie_data (char* parameter_container,int buffer) {
 		while (Serial.available()) {
 			char c = (char) Serial.read();
 			//Serial.print (Serial.read()); // JUST for debug
-			if (c == 13) { // begining or end of command
+			if ((c == 13) || (c == 10)) { 	// begining or end of command
 				//end
-				parameter_container[strlen(parameter_container)] = '\0';
-				return true;
+				if (strlen(parameter_container) > 0) {	// We have to receive something first
+					parameter_container[strlen(parameter_container)] = '\0';
+					return true;
+				}
 			}else{
 					if (strlen(parameter_container) == buffer ) {
 					// Serial.println (" Reached the data max lengh, we reset the tag" );
@@ -229,6 +270,20 @@ boolean recevie_data (char* parameter_container,int buffer) {
 					parameter_container[strlen(parameter_container)]=c;
 					// DEBUG IP
 				}
+			}
+		}
+	}
+}
+
+// Simple YES/NO Question
+boolean YN_question () {
+	while (true) {
+		if (Serial.available ()) {
+			char C = Serial.read ();
+			if (C == 'y' || C == 'Y') {
+				return true;
+			}else if (C == 'n' || C == 'N') {
+				return false;
 			}
 		}
 	}
